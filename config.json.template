@@ -1,0 +1,88 @@
+{
+  "log": {
+    "loglevel": "debug"
+  },
+  "inbounds": [
+    {
+      "listen": "127.0.0.1",
+      "tag": "dokodemo-in",
+      "port": 4431,
+      "protocol": "dokodemo-door",
+      "settings": {
+        "address": "{{DOMAIN}}",
+        "port": 443,
+        "network": "tcp"
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "tls"
+        ],
+        "routeOnly": true
+      }
+    },
+    {
+      "listen": "0.0.0.0",
+      "port": 443,
+      "protocol": "vless",
+      "settings": {
+        "clients": [
+          {
+            "id": "{{UUID}}"
+          }
+        ],
+        "decryption": "none"
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "dest": "127.0.0.1:4431",
+          "serverNames": [
+            "{{DOMAIN}}"
+          ],
+          "privateKey": "{{PRIVATE_KEY}}",
+          "shortIds": {{SHORTIDS_JSON}}
+        }
+      },
+      "sniffing": {
+        "enabled": true,
+        "destOverride": [
+          "http",
+          "tls",
+          "quic"
+        ],
+        "routeOnly": true
+      }
+    }
+  ],
+  "outbounds": [
+    {
+      "protocol": "freedom",
+      "tag": "direct"
+    },
+    {
+      "protocol": "blackhole",
+      "tag": "block"
+    }
+  ],
+  "routing": {
+    "rules": [
+      {
+        "inboundTag": [
+          "dokodemo-in"
+        ],
+        "domain": [
+          "{{DOMAIN}}"
+        ],
+        "outboundTag": "direct"
+      },
+      {
+        "inboundTag": [
+          "dokodemo-in"
+        ],
+        "outboundTag": "block"
+      }
+    ]
+  }
+}

@@ -1,0 +1,48 @@
+# Logs and temporary files
+*.log
+/tmp/
+*.tmp
+
+# Generated configs with real keys (SECURITY: never commit these!)
+config.json
+client_config.json
+
+# Sensitive files
+keys.txt
+*.key
+*.pem
+*.pub
+
+# OS specific
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.backup
+*.bak
+*.orig
