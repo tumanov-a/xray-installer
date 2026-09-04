@@ -40,9 +40,6 @@ xray-installer/
 ├── keys.txt                      # Сгенерированные ключи и VLESS URI (не в git)
 ├── keys_template.txt             # Пример формата keys.txt
 ├── .gitignore
-├── vless-tcp-reality/            # Примеры конфигов (TCP Reality)
-├── vless-grpc-reality/           # Примеры конфигов (gRPC Reality)
-├── vless-tcp-xtls-vision-reality/ # Примеры конфигов (XTLS Vision)
 └── README.md                     # Этот файл
 ```
 
