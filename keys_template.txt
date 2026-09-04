@@ -1,0 +1,38 @@
+XRAY REALITY VPN - КЛЮЧИ И КОНФИГУРАЦИЯ
+=========================================
+
+После `sudo bash setup.sh` все значения автоматически сохраняются в `keys.txt`.
+
+Пример формата `keys.txt`:
+------------------------------------------------------------------
+
+Generated: 2026-09-04T06:00:00Z
+Domain: speed.cloudflare.com
+Server IP: 1.2.3.4
+PrivateKey: <private-key>
+PublicKey: <public-key>
+UUID: <uuid>
+ShortIds: ["abc123...","def456..."]
+
+VLESS URIs:
+- vless://<uuid>@1.2.3.4:443?type=tcp&security=reality&pbk=<public-key>&fp=chrome&sni=speed.cloudflare.com&sid=abc123...&encryption=none#reality
+- vless://<uuid>@1.2.3.4:443?type=tcp&security=reality&pbk=<public-key>&fp=chrome&sni=speed.cloudflare.com&sid=def456...&encryption=none#reality
+
+ИНСТРУКЦИИ:
+-----------
+1. Запустите `sudo bash setup.sh [domain] [num_shortids]`
+2. Скопируйте VLESS URI из `keys.txt` или вывода скрипта
+3. Не коммитьте `keys.txt` — файл в `.gitignore`
+4. Private Key храните только на сервере
+
+ИСТОЧНИКИ КЛЮЧЕЙ:
+-----------------
+- Private/Public Key: `xray x25519`
+- UUID: `xray uuid`
+- ShortId: `openssl rand -hex 8`
+
+КЛИЕНТСКИЕ ПАРАМЕТРЫ:
+---------------------
+Server Port: 443
+Fingerprint: chrome
+SOCKS Proxy (локально на клиенте): 127.0.0.1:10808

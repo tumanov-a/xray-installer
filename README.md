@@ -2,15 +2,15 @@
 
 Этот проект содержит полностью автоматизированный скрипт установки и настройки Xray сервера с поддержкой Reality протокола.
 
-## ⭐ Версия 2.0.0 - Новое!
+## ⭐ Версия 2.1.0
 
-**Главное обновление**: теперь скрипт выводит готовую **VLESS URI** для быстрого импорта в приложения (V2rayN, Clash и т.д.)!
+**Главное обновление**: скрипт генерирует **VLESS URI для каждого ShortId** и сохраняет их в `keys.txt`.
 
 ```
 vless://UUID@IP:443?type=tcp&security=reality&pbk=KEY&fp=chrome&sni=DOMAIN&sid=SHORTID&encryption=none#reality
 ```
 
-Просто скопируйте эту строку и вставьте в приложение! 🚀
+Просто скопируйте ссылку и вставьте в приложение (V2rayN, Clash и т.д.)! 🚀
 
 ## Что делает проект
 
@@ -18,27 +18,31 @@ vless://UUID@IP:443?type=tcp&security=reality&pbk=KEY&fp=chrome&sni=DOMAIN&sid=S
 
 1. ✅ Устанавливает Xray
 2. ✅ Генерирует пару ключей (Private/Public Key) используя `xray x25519`
-3. ✅ Генерирует UUID для клиента
-4. ✅ Генерирует множество shortIds (переменное количество) ⭐ НОВОЕ!
+3. ✅ Генерирует UUID для клиента (`xray uuid`)
+4. ✅ Генерирует множество shortIds (переменное количество)
 5. ✅ Создает конфиг сервера с подставленными значениями
 6. ✅ Копирует конфиг в `/usr/local/etc/xray/config.json`
-7. ✅ Конфигурирует firewall (UFW)
-8. ✅ Запускает и включает Xray сервис
-9. ✅ Генерирует клиентский конфиг с правильными значениями
-10. ✅ Генерирует VLESS URI для импорта в приложения ⭐ НОВОЕ!
-11. ✅ Генерирует альтернативные VLESS URI для каждого ShortId ⭐ НОВОЕ!
+7. ✅ Проверяет конфиг перед запуском (`xray run -test`)
+8. ✅ Конфигурирует firewall (UFW, если установлен)
+9. ✅ Запускает и включает Xray сервис
+10. ✅ Генерирует клиентский конфиг с правильными значениями
+11. ✅ Генерирует VLESS URI для каждого ShortId (по количеству `NUM_SHORTIDS`)
+12. ✅ Сохраняет ключи и VLESS URI в `keys.txt` (перезаписывается при каждом запуске)
 
 ## Структура проекта
 
 ```
-vpn/
-├── setup.sh                      # Основной установочный скрипт
-├── config.json.template          # Шаблон серверного конфига с переменными
-├── client_config.json.template   # Шаблон клиентского конфига с переменными
-├── config.json                   # Пример готового серверного конфига
-├── client_config.json            # Пример готового клиентского конфига
-├── install_xray.sh              # Справочные команды установки
-├── keys.txt                      # Справочный файл для сохранения ключей
+xray-installer/
+├── setup.sh                      # Установка, генерация конфига и запуск
+├── start.sh                      # Перезапуск Xray с существующим конфигом
+├── config.json.template          # Шаблон серверного конфига
+├── client_config.json.template   # Шаблон клиентского конфига
+├── keys.txt                      # Сгенерированные ключи и VLESS URI (не в git)
+├── keys_template.txt             # Пример формата keys.txt
+├── .gitignore
+├── vless-tcp-reality/            # Примеры конфигов (TCP Reality)
+├── vless-grpc-reality/           # Примеры конфигов (gRPC Reality)
+├── vless-tcp-xtls-vision-reality/ # Примеры конфигов (XTLS Vision)
 └── README.md                     # Этот файл
 ```
 
@@ -48,39 +52,48 @@ vpn/
 
 1. **Загрузить проект на сервер:**
 ```bash
-git clone <repository_url> /tmp/xray_setup
-cd /tmp/xray_setup
+git clone <repository_url> /opt/xray-installer
+cd /opt/xray-installer
 ```
 
 Или скопировать файлы через SCP:
 ```bash
-scp setup.sh user@server:/tmp/
+scp -r xray-installer/ user@server:/opt/
 ```
 
 2. **Запустить установку:**
 ```bash
-# Со значениями по умолчанию (домен: speed.cloudflare.com, 2 ShortId)
+# По умолчанию: speed.cloudflare.com, 2 ShortId
 sudo bash setup.sh
 
-# Или с пользовательским доменом и количеством ShortIds
+# С доменом и количеством ShortIds
 sudo bash setup.sh example.com 5
 ```
 
-3. **Скрипт выведет:** 
+3. **Скрипт выведет:**
    - Private Key
    - Public Key
    - UUID
    - ShortId (количество в зависимости от параметра)
-   - **Готовую VLESS URI для подстановки в приложение** ⭐
+   - **VLESS URI для каждого ShortId** (по одной ссылке на клиента)
    - Конфиг для клиента в файл `/tmp/client_config.json`
+   - Ключи и все VLESS URI в `keys.txt` (в корне проекта)
 
 ### На клиенте
 
 **Способ 1: Использовать VLESS URI (рекомендуется)**
 
-Скопируйте VLESS URI из вывода скрипта и подставьте его в Xray приложение:
+Скопируйте VLESS URI из вывода скрипта или из `keys.txt` и импортируйте в Xray приложение. При `NUM_SHORTIDS=5` будет 5 ссылок — по одной на каждого клиента (отличаются только `sid`):
+
 ```
 vless://UUID@SERVER_IP:443?type=tcp&security=reality&pbk=PUBLIC_KEY&fp=chrome&sni=DOMAIN&sid=SHORTID&encryption=none#reality
+```
+
+Пример блока в `keys.txt`:
+```
+VLESS URIs:
+- vless://...@...&sid=abc123...&...
+- vless://...@...&sid=def456...&...
 ```
 
 **Способ 2: Использовать JSON конфиг**
@@ -114,13 +127,15 @@ scp user@server:/tmp/client_config.json ./
 
 ### VLESS URI
 
-Скрипт автоматически генерирует готовую VLESS URI для подстановки в приложение:
+Скрипт генерирует **по одной VLESS URI на каждый ShortId**. Количество ссылок = значению `NUM_SHORTIDS` (по умолчанию 2).
+
+Все URI сохраняются в `keys.txt` (файл перезаписывается при каждом запуске `setup.sh` и исключён из git через `.gitignore`).
 
 ```
 vless://UUID@SERVER_IP:443?type=tcp&security=reality&pbk=PUBLIC_KEY&fp=chrome&sni=DOMAIN&sid=SHORTID&encryption=none#reality
 ```
 
-Вы можете просто скопировать эту ссылку и импортировать её в приложение (V2rayN, Clash и т.д.).
+Каждый клиент может использовать свою ссылку с уникальным `sid`.
 
 ## Параметры скрипта
 
@@ -137,7 +152,7 @@ sudo bash setup.sh [DOMAIN] [NUM_SHORTIDS]
 - `NUM_SHORTIDS` (опционально): Количество ShortId для генерации
   - По умолчанию: `2`
   - Пример: `sudo bash setup.sh example.com 5` (создаст 5 ShortId)
-  - Использование: Каждый ShortId может использоваться для отдельного клиента или резервирования
+  - Использование: Каждый ShortId может использоваться для отдельного клиента
 
 ## Безопасность
 
@@ -147,7 +162,8 @@ sudo bash setup.sh [DOMAIN] [NUM_SHORTIDS]
 2. Private Key никогда не отправляется клиенту
 3. Клиент получает только Public Key
 4. Клиентский конфиг сохраняется в `/tmp/` на сервере
-5. Рекомендуется удалить клиентский конфиг после использования:
+5. `keys.txt` содержит приватные ключи — не коммитьте и не публикуйте
+6. Рекомендуется удалить клиентский конфиг после использования:
    ```bash
    rm /tmp/client_config.json
    ```
@@ -173,8 +189,12 @@ journalctl -u xray -f
 
 ### Перезагрузить конфиг:
 ```bash
+sudo bash start.sh
+# или
 systemctl restart xray
 ```
+
+`start.sh` проверяет конфиг (`xray run -test`) перед перезапуском сервиса.
 
 ### Остановить Xray:
 ```bash
@@ -193,9 +213,10 @@ sudo bash setup.sh
 sudo bash setup.sh myproxy.com
 ```
 
-### Пример 3: Обновление конфига без переустановки
+### Пример 3: Пять клиентов — пять VLESS URI
 ```bash
-sudo bash setup.sh newdomain.com
+sudo bash setup.sh example.com 5
+cat keys.txt
 ```
 
 ## Требования
@@ -203,8 +224,8 @@ sudo bash setup.sh newdomain.com
 - Ubuntu/Debian или другой Linux с поддержкой systemd
 - `curl` установлен
 - `openssl` установлен
+- Root или sudo доступ (обязательно для `setup.sh`)
 - Доступ к интернету для загрузки Xray
-- Root или sudo доступ
 
 ## Поддерживаемые ОС
 
@@ -222,9 +243,9 @@ sudo bash setup.sh
 ```
 
 ### Проблема: "Command not found: xray"
-**Решение:** Убедитесь, что установка завершена успешно и перезагрузитесь:
+**Решение:** Запустите полную установку:
 ```bash
-sudo reboot
+sudo bash setup.sh
 ```
 
 ### Проблема: Порт 443 уже занят
@@ -234,10 +255,13 @@ sudo lsof -i :443
 sudo kill -9 <PID>
 ```
 
+### Проблема: Пустые Private/Public Key
+**Решение:** Обновите `setup.sh` — старые версии не поддерживали новый формат вывода `xray x25519` (Xray 26+).
+
 ## Дополнительная информация
 
 ### О Reality протоколе
-Reality - это протокол маскировки, который скрывает Xray трафик под обычный HTTPS трафик к легитимному веб-сайту. Это делает его очень сложным для блокировки.
+Reality — протокол маскировки, который скрывает Xray трафик под обычный HTTPS трафик к легитимному веб-сайту.
 
 ### О параметрах:
 - **serverName**: Домен, к которому будет выглядеть подключение (используется в SNI)
@@ -247,10 +271,6 @@ Reality - это протокол маскировки, который скры�
 ## Лицензия
 
 Этот проект основан на Xray-core, который выпускается под лицензией MPL 2.0.
-
-## Автор
-
-Создано для облегчения развертывания Xray серверов с Reality протоколом.
 
 ## Ссылки
 
